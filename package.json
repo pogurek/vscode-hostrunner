@@ -9,15 +9,30 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": ["onStartupFinished"],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "hostrunner.helloWorld",
-        "title": "Hello World"
+        "command": "hostrunner.runScript",
+        "title": "HostRunner: Run Script"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "HostRunner Settings",
+      "properties": {
+        "hostrunner.scriptPath": {
+          "type": "string",
+          "default": "",
+          "description": "The full path to the script you want to execute."
+        },
+        "hostrunner.scriptArgs": {
+          "type": "string",
+          "default": "",
+          "description": "Arguments to pass to the script."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

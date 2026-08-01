@@ -1,0 +1,4 @@
+{
+    "hostrunner.scriptPath": "/opt/hostrunner/app",
+    "hostrunner.scriptArgs": "Pete"
+}

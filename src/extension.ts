@@ -1,25 +1,62 @@
 // The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+// Import the exec function from Node.js to run system commands
+import { exec } from 'child_process';
 
 // This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    console.log('Congratulations, your extension "hostrunner" is now active!');
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "hostrunner" is now active!');
+    // 1. Create a "Button" in the Status Bar (bottom left of VS Code)
+    const runButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    runButton.text = "$(play) Run HostRunner Script"; // $(play) adds a standard VS Code triangle icon
+    runButton.tooltip = "Click to run the script defined in HostRunner settings";
+    runButton.command = 'hostrunner.runScript';
+    runButton.show();
+    
+    // Ensure the button is cleaned up when the extension is deactivated
+    context.subscriptions.push(runButton);
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('hostrunner.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from HostRunner!');
-	});
+    // 2. Register the command that the button triggers
+    const disposable = vscode.commands.registerCommand('hostrunner.runScript', () => {
+        
+        // Read settings from the user's settings.json
+        const config = vscode.workspace.getConfiguration('hostrunner');
+        const scriptPath = config.get<string>('scriptPath');
+        const scriptArgs = config.get<string>('scriptArgs');
 
-	context.subscriptions.push(disposable);
+        // Check if the user has provided a script path
+        if (!scriptPath) {
+            vscode.window.showErrorMessage('HostRunner: Please define a script path in your VS Code settings (hostrunner.scriptPath).');
+            return;
+        }
+
+        // Combine the path and arguments (wrapping path in quotes in case of spaces)
+        const fullCommand = `"${scriptPath}" ${scriptArgs || ''}`.trim();
+        
+        vscode.window.showInformationMessage('HostRunner: Executing script...');
+
+        // 3. Execute the script
+        exec(fullCommand, (error, stdout, stderr) => {
+            if (error) {
+                vscode.window.showErrorMessage(`HostRunner Error: ${error.message}`);
+                return;
+            }
+            
+            if (stderr) {
+                vscode.window.showWarningMessage(`HostRunner Warning: ${stderr}`);
+            }
+            
+            // Print the final output as an information message as requested
+            if (stdout) {
+                vscode.window.showInformationMessage(`HostRunner Output: ${stdout}`);
+            } else {
+                vscode.window.showInformationMessage('HostRunner: Script finished successfully (no output).');
+            }
+        });
+    });
+
+    context.subscriptions.push(disposable);
 }
 
 // This method is called when your extension is deactivated
