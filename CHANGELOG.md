@@ -1,9 +1,13 @@
-# Change Log
+# Changelog
 
 All notable changes to the "hostrunner" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.0.1] - 2026-08-02
 
-- Initial release
+### Added
+- A status bar button (`▶ Run HostRunner Script`) to easily trigger external scripts or applications directly from the editor.
+- Configuration settings `hostrunner.scriptPath` and `hostrunner.scriptArgs` to define the target executable and its arguments via `settings.json`.
+- Native VS Code notification popups to display script execution results (stdout), warnings (stderr), and system errors.

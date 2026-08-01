@@ -1,71 +1,31 @@
-# hostrunner README
+# HostRunner
 
-This is the README for your extension "hostrunner". After writing up a brief description, we recommend including the following sections.
+HostRunner is a lightweight VS Code extension that adds a convenient status bar button to execute an external script or application directly from your editor. It reads the script's location and arguments from your workspace settings and displays the output in VS Code notifications.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+* **One-Click Execution:** Adds a `▶ Run HostRunner Script` button to the bottom-left status bar.
+* **Workspace Configurable:** Easily switch scripts or arguments on a per-project basis using your workspace `settings.json`.
+* **Output Integration:** Captures standard output (stdout) and standard error (stderr) and displays them natively in VS Code information and warning messages.
 
 ## Requirements
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+To ensure the extension can successfully run your script:
+1. The script must be executable by your operating system (e.g., `chmod +x /path/to/script` on Linux/macOS).
+2. If your script uses a shebang (like `#!/usr/bin/env python`), ensure the executing environment has access to that binary, or use an absolute path in the shebang (e.g., `#!/absolute/path/to/uv run`).
 
 ## Extension Settings
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+For the status bar button to work, you **must** configure the following attributes in your VS Code settings (either globally or in your workspace's `.vscode/settings.json`):
 
-For example:
+* `hostrunner.scriptPath`: The absolute path to the script or application you want to execute.
+  * *Example:* `"/opt/hostapp/app"` or `"/usr/bin/echo"`
+* `hostrunner.scriptArgs`: A string containing the arguments to pass to the script when executed.
+  * *Example:* `"Pete"` or `"--verbose --all"`
 
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+**Example `.vscode/settings.json`:**
+```json
+{
+    "hostrunner.scriptPath": "/opt/hostapp/app",
+    "hostrunner.scriptArgs": "Pete"
+}
