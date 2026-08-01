@@ -2,7 +2,7 @@
   "name": "hostrunner",
   "displayName": "HostRunner",
   "description": "Adds a status bar button to execute the host application with the provided argument.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "pogurek",
   "repository": {
     "type": "git",
@@ -28,6 +28,11 @@
     "configuration": {
       "title": "HostRunner Settings",
       "properties": {
+        "hostrunner.buttonLabel": {
+          "type": "string",
+          "default": "",
+          "description": "Overrides the default status bar button text. The play icon will always be kept."
+        },
         "hostrunner.scriptPath": {
           "type": "string",
           "default": "",

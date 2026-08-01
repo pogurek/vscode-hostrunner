@@ -1,4 +1,5 @@
 {
+    "hostrunner.buttonLabel": "Greetings",
     "hostrunner.scriptPath": "./app",
     "hostrunner.scriptArgs": "Pete"
 }
