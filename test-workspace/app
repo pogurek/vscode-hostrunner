@@ -1,0 +1,9 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# ///
+
+import sys
+
+param = " ".join(sys.argv[1:]) if len(sys.argv) > 1 else ""
+print(f"Hello {param}" if param else "Hello")
