@@ -3,13 +3,20 @@
   "displayName": "HostRunner",
   "description": "Adds a status bar button to execute the host application with the provided argument.",
   "version": "0.0.1",
+  "publisher": "pogurek",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pogurek/hostrunner.git"
+  },
   "engines": {
     "vscode": "^1.125.0"
   },
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onStartupFinished"],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
