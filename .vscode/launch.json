@@ -14,7 +14,7 @@
                 "${workspaceFolder}/test-workspace"
             ],
             "env": {
-                "HOSTRUNNER_SCRIPT": "./app",
+                "HOSTRUNNER_SCRIPT": "/home/pete/github/hostrunner/test-workspace/app",
                 "HOSTRUNNER_CMD": "python"
             },
             "outFiles": [

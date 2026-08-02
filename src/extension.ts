@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { exec } from 'child_process';
-import * as fs from 'fs';
 import * as path from 'path';
+import * as fs from 'fs';
 
 export function activate(context: vscode.ExtensionContext) {
     // 1. Create an Output Channel for production-visible logging
@@ -10,17 +10,20 @@ export function activate(context: vscode.ExtensionContext) {
 
     outputChannel.appendLine('HostRunner is active!');
 
-    // --- One-Time Environment Variable Evaluation ---
-    if (process.env.HOSTRUNNER_CMD) {
-        outputChannel.appendLine(`[Info] Found host environment variable: HOSTRUNNER_CMD = "${process.env.HOSTRUNNER_CMD}"`);
+    // --- Assign Environment Variables & Report ---
+    const envCmd = process.env.HOSTRUNNER_CMD;
+    const envScript = process.env.HOSTRUNNER_SCRIPT;
+
+    if (envCmd) {
+        outputChannel.appendLine(`[Info] Found host env var: HOSTRUNNER_CMD = "${envCmd}"`);
     } else {
-        outputChannel.appendLine(`[Info] Host environment variable HOSTRUNNER_CMD not found.`);
+        outputChannel.appendLine(`[Info] Host env var HOSTRUNNER_CMD not found.`);
     }
 
-    if (process.env.HOSTRUNNER_SCRIPT) {
-        outputChannel.appendLine(`[Info] Found host environment variable: HOSTRUNNER_SCRIPT = "${process.env.HOSTRUNNER_SCRIPT}"`);
+    if (envScript) {
+        outputChannel.appendLine(`[Info] Found host env var: HOSTRUNNER_SCRIPT = "${envScript}"`);
     } else {
-        outputChannel.appendLine(`[Info] Host environment variable HOSTRUNNER_SCRIPT not found.`);
+        outputChannel.appendLine(`[Info] Host env var HOSTRUNNER_SCRIPT not found.`);
     }
     outputChannel.appendLine('--------------------------------------------------');
 
@@ -39,12 +42,10 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    // Initialize button text and show it
     updateButtonText();
     runButton.show();
     context.subscriptions.push(runButton);
 
-    // Listen for configuration changes to update the button text in real-time
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(event => {
             if (event.affectsConfiguration('hostrunner.buttonLabel')) {
@@ -57,61 +58,84 @@ export function activate(context: vscode.ExtensionContext) {
         outputChannel.appendLine(`\n--- Button Pressed ---`);
 
         const config = vscode.workspace.getConfiguration('hostrunner');
-        
-        // 1. Read Script Runner (Env Var overrides VS Code settings)
-        let scriptRunner = config.get<string>('scriptRunner') || '';
-        
-        if (process.env.HOSTRUNNER_CMD) {
-            scriptRunner = process.env.HOSTRUNNER_CMD;
-        }
-        
-        // The relative path of the script inside the repo (e.g., "./scripts/build.sh")
-        let scriptPath = config.get<string>('scriptPath');
+        const settingsCmd = config.get<string>('scriptRunner') || '';
+        const settingsScript = config.get<string>('scriptPath') || '';
         const scriptArgs = config.get<string>('scriptArgs') || '';
 
-        if (!scriptPath) {
-            vscode.window.showErrorMessage('HostRunner: scriptPath is not defined in settings.');
-            outputChannel.appendLine('Error: scriptPath is not defined in settings.');
+        // 1. Resolve Command
+        let finalCmd = '';
+        if (envCmd) {
+            finalCmd = envCmd;
+            outputChannel.appendLine(`[Config] Using script runner from HOSTRUNNER_CMD: "${finalCmd}"`);
+        } else if (settingsCmd) {
+            finalCmd = settingsCmd;
+            outputChannel.appendLine(`[Config] Using script runner from settings: "${finalCmd}"`);
+        }
+
+        // 2. Resolve Script Path & Track Source
+        let rawScriptPath = '';
+        let isFromEnv = false;
+
+        if (envScript) {
+            rawScriptPath = envScript;
+            isFromEnv = true;
+            outputChannel.appendLine(`[Config] Using script path from HOSTRUNNER_SCRIPT: "${rawScriptPath}"`);
+        } else if (settingsScript) {
+            rawScriptPath = settingsScript;
+            isFromEnv = false;
+            outputChannel.appendLine(`[Config] Using script path from settings: "${rawScriptPath}"`);
+        }
+
+        if (!rawScriptPath) {
+            vscode.window.showErrorMessage('HostRunner: Script path is not defined in environment variables or settings.');
+            outputChannel.appendLine('Error: Script path is not defined.');
             return;
         }
 
-        // 2. Resolve the Target CWD
-        let targetCwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+        // 3. Process Path based on Source
+        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+        let finalScriptPath = '';
 
-        // If the container path doesn't exist on the host, check for a host environment variable!
-        if (!fs.existsSync(targetCwd)) {
-            const envHostPath = process.env.HOSTRUNNER_SCRIPT;
-
-            if (envHostPath) {
-                if (fs.existsSync(envHostPath)) {
-                    targetCwd = envHostPath;
-                } else {
-                    vscode.window.showErrorMessage(
-                        `HostRunner: The path defined in HOSTRUNNER_SCRIPT (${envHostPath}) does not exist.`
-                    );
-                    outputChannel.appendLine(`Error: HOSTRUNNER_SCRIPT is set to '${envHostPath}', but the path does not exist on the host.`);
+        if (isFromEnv) {
+            // Environment variable MUST be absolute
+            if (!path.isAbsolute(rawScriptPath)) {
+                vscode.window.showErrorMessage(`HostRunner: HOSTRUNNER_SCRIPT must be an absolute path. Provided: "${rawScriptPath}"`);
+                outputChannel.appendLine(`[Error] Env var script path is not absolute: "${rawScriptPath}"`);
+                return;
+            }
+            finalScriptPath = rawScriptPath;
+            outputChannel.appendLine(`[Path] Env var path is absolute. Used as is: "${finalScriptPath}"`);
+        } else {
+            // Settings path can be relative or absolute
+            if (path.isAbsolute(rawScriptPath)) {
+                finalScriptPath = rawScriptPath;
+                outputChannel.appendLine(`[Path] Settings path is absolute. Used as is: "${finalScriptPath}"`);
+            } else {
+                if (!workspaceRoot) {
+                    vscode.window.showErrorMessage('HostRunner: Cannot resolve relative settings path because no workspace folder is open.');
+                    outputChannel.appendLine('Error: Relative settings path provided, but no workspace is open.');
                     return;
                 }
-            } else {
-                vscode.window.showErrorMessage(
-                    'HostRunner: Cannot resolve host path. Please set the HOSTRUNNER_SCRIPT environment variable on your Host OS.'
-                );
-                outputChannel.appendLine(`Error: Workspace path '${targetCwd}' not found on host OS, and HOSTRUNNER_SCRIPT environment variable is not set.`);
-                return;
+                finalScriptPath = path.join(workspaceRoot, rawScriptPath);
+                outputChannel.appendLine(`[Path] Settings path is relative. Concatenated with workspace: "${finalScriptPath}"`);
             }
         }
 
-        // 3. Resolve the script path relative to the newly found host targetCwd
-        if (!path.isAbsolute(scriptPath)) {
-            scriptPath = path.join(targetCwd, scriptPath);
+        // 4. Define Working Directory (CWD)
+        let targetCwd = workspaceRoot;
+        
+        // If there is no workspace, or it's a container path that doesn't exist on the host OS
+        if (!targetCwd || !fs.existsSync(targetCwd)) {
+            targetCwd = path.dirname(finalScriptPath);
+            outputChannel.appendLine(`[Path] Workspace root not found on host OS. Falling back to script directory for CWD: "${targetCwd}"`);
         }
 
-        // 4. Construct and execute the command
-        const fullCommand = scriptRunner 
-            ? `${scriptRunner} "${scriptPath}" ${scriptArgs}`.trim()
-            : `"${scriptPath}" ${scriptArgs}`.trim();
+        // 5. Construct and execute the command
+        const fullCommand = finalCmd 
+            ? `${finalCmd} "${finalScriptPath}" ${scriptArgs}`.trim()
+            : `"${finalScriptPath}" ${scriptArgs}`.trim();
 
-        // Log the execution details to the Output channel
+        // Log the execution details
         outputChannel.appendLine(`Working Directory: ${targetCwd}`);
         outputChannel.appendLine(`Executing Command: ${fullCommand}`);
         

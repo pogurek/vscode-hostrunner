@@ -5,6 +5,19 @@ All notable changes to the "hostrunner" extension will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.6] - 2026-08-02
+
+### Added
+- Smart Current Working Directory (CWD) fallback logic: If the VS Code workspace path does not exist on the host OS (e.g., when running inside a Dev Container), the extension safely defaults to the script's parent directory.
+- Path source tracking to independently handle routing rules for environment variables versus workspace settings.
+
+### Changed
+- Enforced strict absolute paths for the `HOSTRUNNER_SCRIPT` environment variable to prevent host/container pathing conflicts.
+- Preserved relative path support for workspace settings, resolving them directly against the workspace root.
+
+### Fixed
+- Resolved `spawn /bin/sh ENOENT` execution errors that occurred when the extension attempted to run host commands within container-specific workspace directories (like `/workspace`).
+
 ## [0.0.5] - 2026-08-02
 
 ### Added
