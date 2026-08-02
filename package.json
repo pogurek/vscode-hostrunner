@@ -2,8 +2,11 @@
   "name": "hostrunner",
   "displayName": "HostRunner",
   "description": "Adds a status bar button to execute the host application with the provided argument.",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "publisher": "pogurek",
+  "extensionKind": [
+    "ui"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/pogurek/hostrunner.git"
@@ -33,10 +36,15 @@
           "default": "",
           "description": "Overrides the default status bar button text. The play icon will always be kept."
         },
+        "hostrunner.scriptRunner": {
+          "type": "string",
+          "default": "",
+          "description": "The executable to run the script with (e.g., 'bash', 'powershell'). Leave empty to run directly. Note: This can be overridden globally by setting the HOSTRUNNER_CMD environment variable on your Host OS."
+        },
         "hostrunner.scriptPath": {
           "type": "string",
           "default": "",
-          "description": "The full path to the script you want to execute."
+          "description": "The path to the script you want to execute. Can be an absolute path, or a relative path (e.g., './scripts/run.sh'). Relative paths will resolve against the host repository root defined by the HOSTRUNNER_WORKSPACE environment variable."
         },
         "hostrunner.scriptArgs": {
           "type": "string",

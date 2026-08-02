@@ -1,82 +1,99 @@
-// The module 'vscode' contains the VS Code extensibility API
 import * as vscode from 'vscode';
-// Import the exec function from Node.js to run system commands
 import { exec } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 
-// This method is called when your extension is activated
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Congratulations, your extension "hostrunner" is now active!');
+    console.log('HostRunner is active!');
 
-    // 1. Create a "Button" in the Status Bar (bottom left of VS Code)
     const runButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    
-    // Helper function to update the button label dynamically
-    const updateButtonLabel = () => {
+    runButton.command = 'hostrunner.runScript';
+
+    // Function to update the button text based on configuration
+    const updateButtonText = () => {
         const config = vscode.workspace.getConfiguration('hostrunner');
-        const customLabel = config.get<string>('buttonLabel');
-        // If a custom label is provided, use it. Otherwise, use the default.
-        // The $(play) syntax ensures the icon remains regardless of the text.
-        runButton.text = `$(play) ${customLabel || 'Run HostRunner Script'}`;
+        const customLabel = config.get<string>('buttonLabel')?.trim();
+        
+        if (customLabel) {
+            runButton.text = `$(play) ${customLabel}`;
+        } else {
+            runButton.text = `$(play) Run HostRunner Script`;
+        }
     };
 
-    // Set the initial label
-    updateButtonLabel();
-    
-    runButton.tooltip = "Click to run the script defined in HostRunner settings";
-    runButton.command = 'hostrunner.runScript';
+    // Initialize button text and show it
+    updateButtonText();
     runButton.show();
-
-    // Ensure the button is cleaned up when the extension is deactivated
     context.subscriptions.push(runButton);
 
-    // Listen for setting changes so the button updates live without reloading VS Code
-    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
-        if (e.affectsConfiguration('hostrunner.buttonLabel')) {
-            updateButtonLabel();
-        }
-    }));
+    // Listen for configuration changes to update the button text in real-time
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration(event => {
+            if (event.affectsConfiguration('hostrunner.buttonLabel')) {
+                updateButtonText();
+            }
+        })
+    );
 
-    // 2. Register the command that the button triggers
     const disposable = vscode.commands.registerCommand('hostrunner.runScript', () => {
 
-        // Read settings from the user's settings.json
         const config = vscode.workspace.getConfiguration('hostrunner');
-        const scriptPath = config.get<string>('scriptPath');
-        const scriptArgs = config.get<string>('scriptArgs');
+        
+        // 1. Read Script Runner (Env Var overrides VS Code settings)
+        const scriptRunner = process.env.HOSTRUNNER_CMD || config.get<string>('scriptRunner') || '';
+        
+        // The relative path of the script inside the repo (e.g., "./scripts/build.sh")
+        let scriptPath = config.get<string>('scriptPath');
+        const scriptArgs = config.get<string>('scriptArgs') || '';
 
-        // Check if the user has provided a script path
         if (!scriptPath) {
-            vscode.window.showErrorMessage('HostRunner: Please define a script path in your VS Code settings (hostrunner.scriptPath).');
+            vscode.window.showErrorMessage('HostRunner: scriptPath is not defined in settings.');
             return;
         }
 
-        // Combine the path and arguments (wrapping path in quotes in case of spaces)
-        const fullCommand = `"${scriptPath}" ${scriptArgs || ''}`.trim();
+        // 2. Resolve the Target CWD
+        let targetCwd = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
 
-        vscode.window.showInformationMessage('HostRunner: Executing script...');
+        // If the container path doesn't exist on the host, check for a host environment variable!
+        if (!fs.existsSync(targetCwd)) {
+            const envHostPath = process.env.HOSTRUNNER_SCRIPT;
 
-        // 3. Execute the script
-        exec(fullCommand, { cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath }, (error, stdout, stderr) => {
+            if (envHostPath && fs.existsSync(envHostPath)) {
+                targetCwd = envHostPath;
+            } else {
+                vscode.window.showErrorMessage(
+                    'HostRunner: Cannot resolve host path. Please set the HOSTRUNNER_SCRIPT environment variable on your Host OS.'
+                );
+                return;
+            }
+        }
+
+        // 3. Resolve the script path relative to the newly found host targetCwd
+        if (!path.isAbsolute(scriptPath)) {
+            scriptPath = path.join(targetCwd, scriptPath);
+        }
+
+        // 4. Construct and execute the command
+        const fullCommand = scriptRunner 
+            ? `${scriptRunner} "${scriptPath}" ${scriptArgs}`.trim()
+            : `"${scriptPath}" ${scriptArgs}`.trim();
+
+        console.log(`[HostRunner] Host Execution CWD: ${targetCwd}`);
+        console.log(`[HostRunner] Command: ${fullCommand}`);
+
+        exec(fullCommand, { cwd: targetCwd }, (error, stdout, stderr) => {
             if (error) {
                 vscode.window.showErrorMessage(`HostRunner Error: ${error.message}`);
                 return;
             }
-
             if (stderr) {
                 vscode.window.showWarningMessage(`HostRunner Warning: ${stderr}`);
             }
-
-            // Print the final output as an information message as requested
-            if (stdout) {
-                vscode.window.showInformationMessage(`HostRunner Output: ${stdout}`);
-            } else {
-                vscode.window.showInformationMessage('HostRunner: Script finished successfully (no output).');
-            }
+            vscode.window.showInformationMessage(`HostRunner Output: ${stdout || 'Success'}`);
         });
     });
 
     context.subscriptions.push(disposable);
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() { }
