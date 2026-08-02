@@ -5,6 +5,11 @@ All notable changes to the "hostrunner" extension will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.7] - 2026-08-02
+
+### Added
+- Remote context logging at startup using `vscode.env.remoteName` to immediately identify if the extension is running locally, in a Dev Container, or another remote environment.
+
 ## [0.0.6] - 2026-08-02
 
 ### Added

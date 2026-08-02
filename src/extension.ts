@@ -10,6 +10,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     outputChannel.appendLine('HostRunner is active!');
 
+    // --- Log Execution Context ---
+    const remoteName = vscode.env.remoteName;
+    if (remoteName) {
+        outputChannel.appendLine(`[Environment] Running in remote context: ${remoteName}`);
+    } else {
+        outputChannel.appendLine(`[Environment] Running locally: ${remoteName}`);
+    }
+
     // --- Assign Environment Variables & Report ---
     const envCmd = process.env.HOSTRUNNER_CMD;
     const envScript = process.env.HOSTRUNNER_SCRIPT;
