@@ -5,6 +5,26 @@ All notable changes to the "hostrunner" extension will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.8] - 2026-08-02
+
+### Added
+- Topology detection combining the client OS (`process.platform`) with `vscode.env.remoteName` to distinguish the two supported setups: **WSL → Dev Container** (Windows client) and **Linux → Dev Container** (native Linux client). The detected topology is reported at startup and on every execution.
+- Hard activation guard: in any other environment the extension logs a fatal diagnostic, shows an error notification, and registers no command, status bar item, or configuration listener.
+- Setting `hostrunner.root` (overridable by the `HOSTRUNNER_ROOT` environment variable) defining the host-side repository root. It serves as both the working directory of the launched process and the base for script path resolution.
+- Platform-aware path handling driven by the detected topology: UNC paths (`\\wsl.localhost\<distro>\...`) on a Windows client, POSIX paths on a Linux client. Forward slashes in `hostrunner.scriptPath` are normalised for the host, so the same value works in both topologies.
+- Workspace URI and decoded remote authority logging at startup to expose the host-side path behind a Dev Container workspace.
+
+### Changed
+- **Breaking:** `hostrunner.scriptPath` and `HOSTRUNNER_SCRIPT` must now be relative to `hostrunner.root`; absolute paths are rejected. The former rule requiring `HOSTRUNNER_SCRIPT` to be absolute is reversed.
+- **Breaking:** the working directory is now always `hostrunner.root`. The workspace folder is no longer consulted, and the CWD fallback heuristic from 0.0.6 has been removed.
+- Uniform precedence for all inputs: environment variable wins over workspace setting, for the runner, the root, and the script path alike. The path-source tracking introduced in 0.0.6 is no longer needed.
+- PowerShell is used as the execution shell on a Windows client, since `cmd.exe` cannot change directory into a UNC path and would silently start the process in `C:\Windows`.
+- Settings descriptions rewritten with per-topology path examples and cross-links; `hostrunner.root`, `hostrunner.scriptRunner`, and `hostrunner.buttonLabel` are now `machine-overridable` in scope.
+
+### Fixed
+- Spurious warning notification when a script wrote only a newline to stderr, and trailing blank lines in output notifications; stdout and stderr are now trimmed before reporting.
+- Host filesystem existence check removed. It could never succeed on a Windows client inspecting a Linux path, so the CWD fallback it guarded fired unconditionally in the WSL topology.
+
 ## [0.0.7] - 2026-08-02
 
 ### Added

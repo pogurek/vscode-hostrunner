@@ -2,7 +2,7 @@
   "name": "hostrunner",
   "displayName": "HostRunner",
   "description": "Adds a status bar button to execute the host application with the provided argument.",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "publisher": "pogurek",
   "extensionKind": [
     "ui"
@@ -34,22 +34,30 @@
         "hostrunner.buttonLabel": {
           "type": "string",
           "default": "",
-          "description": "Overrides the default status bar button text. The play icon will always be kept."
+          "scope": "machine-overridable",
+          "description": "Text of the status bar button. Leave empty for the default label 'Run HostRunner Script'. The play icon is always prepended."
+        },
+        "hostrunner.root": {
+          "type": "string",
+          "default": "",
+          "scope": "machine-overridable",
+          "markdownDescription": "**Required.** Absolute path, on the *host* filesystem, to the repository root. Used as the working directory of the launched process and as the base for `#hostrunner.scriptPath#`.\n\nThe expected form depends on where VS Code itself runs:\n- **Windows client** (WSL → dev container): a UNC path into the distro, e.g. `\\\\wsl.localhost\\Ubuntu\\home\\pete\\github\\my-repo`.\n- **Linux client** (native → dev container): a POSIX path, e.g. `/home/pete/github/my-repo`.\n\nThis is *not* the path inside the container (`/workspaces/...`) — the process runs on the host, not in the container. Overridden by the `HOSTRUNNER_ROOT` environment variable of the host VS Code process."
         },
         "hostrunner.scriptRunner": {
           "type": "string",
           "default": "",
-          "description": "The executable to run the script with (e.g., 'bash', 'powershell'). Leave empty to run directly. Note: This can be overridden globally by setting the HOSTRUNNER_CMD environment variable on your Host OS."
+          "scope": "machine-overridable",
+          "markdownDescription": "Host executable used to launch the script, e.g. `python.exe`, `bash`, `powershell.exe`. Must be resolvable on the host's `PATH` or given as an absolute host path. Leave empty to execute the script directly.\n\nOverridden by the `HOSTRUNNER_CMD` environment variable of the host VS Code process."
         },
         "hostrunner.scriptPath": {
           "type": "string",
           "default": "",
-          "description": "The path to the script you want to execute. Can be an absolute path, or a relative path (e.g., './scripts/run.sh'). Relative paths will resolve against the host repository root defined by the HOSTRUNNER_WORKSPACE environment variable."
+          "markdownDescription": "**Required.** Path to the script, always *relative* to `#hostrunner.root#` — absolute paths are rejected. Forward slashes are accepted on both platforms and normalised, so `./scripts/app.py` works everywhere.\n\nOverridden by the `HOSTRUNNER_SCRIPT` environment variable of the host VS Code process."
         },
         "hostrunner.scriptArgs": {
           "type": "string",
           "default": "",
-          "description": "Arguments to pass to the script."
+          "markdownDescription": "Arguments appended verbatim after the script path. Passed through the host shell unquoted, so quote any argument containing spaces yourself."
         }
       }
     }
