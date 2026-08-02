@@ -2,7 +2,7 @@
   "name": "hostrunner",
   "displayName": "HostRunner",
   "description": "Adds a status bar button to execute the host application with the provided argument.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "publisher": "pogurek",
   "extensionKind": [
     "ui"

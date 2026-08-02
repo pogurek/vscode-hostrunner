@@ -5,6 +5,13 @@ All notable changes to the "hostrunner" extension will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.5] - 2026-08-02
+
+### Added
+- Dedicated "HostRunner" Output Channel for production-visible background logging.
+- One-time startup evaluation and logging of `HOSTRUNNER_CMD` and `HOSTRUNNER_SCRIPT` environment variables to simplify debugging.
+- Detailed execution logging, which records the resolved working directory, the full command, and standard output/errors into the Output Channel upon every button press.
+
 ## [0.0.4] - 2026-08-02
 
 ### Added
